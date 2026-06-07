@@ -5,7 +5,8 @@ Personal and household movie/TV tracking service built with Django, HTMX, Postgr
 ## Current status
 
 Phase 1 scaffold is complete and has passed the quality check. Phase 2 accounts
-and household onboarding is complete.
+and household onboarding is complete. Phase 3 is planned and documented in
+`docs/phase-3-instructions.md`.
 
 Verified in Docker Compose:
 
@@ -178,7 +179,13 @@ Deferred:
 
 Planned direction:
 
-- Catalog search and title details backed by integrations
+- Phase 3: catalog search and title details backed by integrations
 - Personal watch states and household lists
 - Streaming availability and recommendations
 - Background sync tasks and scheduled refreshes
+
+Phase 3 implementation instructions are available in:
+
+```text
+docs/phase-3-instructions.md
+```
