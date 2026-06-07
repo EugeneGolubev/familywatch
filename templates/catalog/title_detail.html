@@ -45,6 +45,35 @@
             <dd>{{ title.tmdb_id }}</dd>
           </div>
         </dl>
+
+        <section class="rounded border border-slate-800 bg-slate-900 p-4">
+          <h2 class="mb-3 text-lg font-semibold">Update personal state</h2>
+          <form action="{% url 'personal_title_state' title_pk=title.pk %}" method="post" class="grid gap-3 sm:grid-cols-2">
+            {% csrf_token %}
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Status</span>
+              {{ personal_form.status }}
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Rating</span>
+              {{ personal_form.rating }}
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Watched at</span>
+              {{ personal_form.watched_at }}
+            </label>
+            <label class="block text-sm sm:col-span-2">
+              <span class="mb-1 block text-slate-400">Notes</span>
+              {{ personal_form.notes }}
+            </label>
+            <div class="flex gap-3 sm:col-span-2">
+              <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Save</button>
+              {% if personal_state %}
+                <span class="self-center text-sm text-slate-400">Currently {{ personal_state.get_status_display }}</span>
+              {% endif %}
+            </div>
+          </form>
+        </section>
       </div>
     </div>
   </article>
