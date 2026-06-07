@@ -259,4 +259,5 @@ Phase implementation instructions remain available for reference in:
 ```text
 docs/phase-3-instructions.md
 docs/phase-4-instructions.md
+docs/phase-5-instructions.md
 ```
