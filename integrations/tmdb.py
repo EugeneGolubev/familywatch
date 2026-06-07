@@ -15,6 +15,63 @@ class TMDbClientError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class NormalizedTMDbTitle:
+    tmdb_id: int
+    media_type: str
+    title: str
+    original_title: str
+    year: int | None
+    overview: str
+    poster_path: str
+
+    @property
+    def media_label(self) -> str:
+        if self.media_type == "tv":
+            return "TV"
+        return "Movie"
+
+    @property
+    def poster_url(self) -> str:
+        if not self.poster_path:
+            return ""
+        return f"https://image.tmdb.org/t/p/w185{self.poster_path}"
+
+
+def _year_from_date(value: str | None) -> int | None:
+    if not value or len(value) < 4:
+        return None
+    try:
+        return int(value[:4])
+    except ValueError:
+        return None
+
+
+def normalize_search_results(payload: dict[str, Any]) -> list[NormalizedTMDbTitle]:
+    results: list[NormalizedTMDbTitle] = []
+    for item in payload.get("results", []):
+        media_type = item.get("media_type")
+        if media_type not in {"movie", "tv"}:
+            continue
+
+        date_value = item.get("release_date") if media_type == "movie" else item.get("first_air_date")
+        title = item.get("title") if media_type == "movie" else item.get("name")
+        original_title = item.get("original_title") if media_type == "movie" else item.get("original_name")
+
+        results.append(
+            NormalizedTMDbTitle(
+                tmdb_id=item["id"],
+                media_type=media_type,
+                title=title or "",
+                original_title=original_title or "",
+                year=_year_from_date(date_value),
+                overview=item.get("overview") or "",
+                poster_path=item.get("poster_path") or "",
+            )
+        )
+    return results
+
+
+@dataclass(frozen=True)
 class TMDbClient:
     api_key: str = settings.TMDB_API_KEY
     base_url: str = "https://api.themoviedb.org/3"

@@ -5,8 +5,8 @@ Personal and household movie/TV tracking service built with Django, HTMX, Postgr
 ## Current status
 
 Phase 1 scaffold is complete and has passed the quality check. Phase 2 accounts
-and household onboarding is complete. Phase 3 is planned and documented in
-`docs/phase-3-instructions.md`.
+and household onboarding is complete. Phase 3 catalog search and title details
+are complete.
 
 Verified in Docker Compose:
 
@@ -47,6 +47,22 @@ This repository now includes:
 - Explicit admin configuration for profiles, households, and memberships
 - Tests for account/profile creation, household creation, membership roles, and
   dashboard/detail permissions
+
+## Phase 3 scope
+
+This repository now includes:
+
+- Authenticated catalog search backed by the TMDb integration
+- Normalized TMDb movie and TV search results with title, type, year, overview,
+  and poster metadata
+- Title detail pages that sync local `Title` rows from TMDb on first open
+- Local title upserts that preserve existing metadata when TMDb omits optional
+  fields
+- Duplicate protection for the same TMDb id and title type through the existing
+  `(type, tmdb_id)` database constraint
+- Helpful UI messages when `TMDB_API_KEY` is not configured
+- Tests for TMDb normalization, catalog services, missing API key behavior,
+  authenticated/unauthenticated access, detail sync, and duplicate prevention
 
 ## Requirements
 
@@ -94,7 +110,12 @@ http://localhost:8000/accounts/register/
 http://localhost:8000/login/
 http://localhost:8000/households/
 http://localhost:8000/households/create/
+http://localhost:8000/catalog/search/
 ```
+
+Catalog search requires login. Set `TMDB_API_KEY` in `.env` to enable live TMDb
+search and detail sync. Without the key, the app stays usable and shows a
+configuration message on catalog pages.
 
 ## Run migrations
 
@@ -175,16 +196,28 @@ Deferred:
 - Inviting additional household members
 - Shared default lists
 
+### Phase 3: Catalog search and title details
+
+Status: complete.
+
+Completed:
+
+- TMDb-backed catalog search for authenticated users
+- Movie and TV result normalization
+- Search result pages with metadata and poster images when available
+- Title detail pages that create or update local `Title` records from TMDb
+- Missing TMDb API key handling in services and UI
+- Service and view tests for Phase 3 behavior
+
 ### Later phases
 
 Planned direction:
 
-- Phase 3: catalog search and title details backed by integrations
 - Personal watch states and household lists
 - Streaming availability and recommendations
 - Background sync tasks and scheduled refreshes
 
-Phase 3 implementation instructions are available in:
+Phase 3 implementation instructions remain available for reference in:
 
 ```text
 docs/phase-3-instructions.md
