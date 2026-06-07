@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -25,6 +26,11 @@ class UserTitleState(models.Model):
 
     class Meta:
         unique_together = ("user", "title")
+
+    def clean(self) -> None:
+        super().clean()
+        if self.rating is not None and not 1 <= self.rating <= 10:
+            raise ValidationError({"rating": "Rating must be between 1 and 10."})
 
     def __str__(self) -> str:
         return f"{self.user} - {self.title} - {self.status}"

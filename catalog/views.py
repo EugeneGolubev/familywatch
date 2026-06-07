@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, render
 from catalog.models import Title
 from catalog.services import CatalogService
 from integrations.tmdb import TMDbClientError
+from lists.forms import PersonalTitleStateForm
+from lists.models import UserTitleState
 
 
 @login_required
@@ -35,11 +37,15 @@ def title_detail(request, pk: int):
     else:
         title = get_object_or_404(Title, pk=pk)
 
+    personal_state = UserTitleState.objects.filter(user=request.user, title=title).first() if title else None
+
     return render(
         request,
         "catalog/title_detail.html",
         {
             "title": title,
             "error_message": error_message,
+            "personal_state": personal_state,
+            "personal_form": PersonalTitleStateForm(instance=personal_state) if title else None,
         },
     )

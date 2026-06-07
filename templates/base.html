@@ -12,7 +12,7 @@
     <a href="/" class="font-bold">FamilyWatch</a>
     <a href="/catalog/search/">Search</a>
     <a href="/lists/mine/">My List</a>
-    <a href="/lists/household/">Household List</a>
+    <a href="/households/">Households</a>
     <span class="ml-auto"></span>
     {% if user.is_authenticated %}
       <span>{{ user.username }}</span>
@@ -23,6 +23,13 @@
     {% endif %}
   </nav>
   <main class="max-w-5xl mx-auto p-6">
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="rounded border border-slate-700 bg-slate-900 p-3 text-sm">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 </body>

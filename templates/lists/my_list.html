@@ -1,2 +1,53 @@
 {% extends "base.html" %}
-{% block content %}<h1 class="text-2xl font-bold">My List</h1><p class="text-slate-400">Personal list management comes in Phase 4.</p>{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold">My List</h1>
+      <p class="text-slate-400">Your personal watch states.</p>
+    </div>
+    <form action="{% url 'my_list' %}" method="get" class="flex items-end gap-2">
+      <label class="text-sm">
+        <span class="mb-1 block text-slate-400">Status</span>
+        <select name="status" class="rounded bg-slate-900 border border-slate-700 p-2">
+          <option value="">All</option>
+          {% for value,label in status_choices %}
+            <option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="rounded bg-slate-200 px-3 py-2 font-semibold text-slate-950">Filter</button>
+    </form>
+  </div>
+
+  {% if states %}
+    <div class="divide-y divide-slate-800 rounded border border-slate-800">
+      {% for state in states %}
+        <article class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-semibold">
+              <a href="{% url 'title_detail' pk=state.title.pk %}" class="text-cyan-300 hover:text-cyan-200">{{ state.title.title }}</a>
+            </h2>
+            <p class="text-sm text-slate-400">
+              {{ state.get_status_display }}
+              {% if state.rating %} · {{ state.rating }}/10{% endif %}
+              {% if state.watched_at %} · watched {{ state.watched_at|date:"M j, Y H:i" }}{% endif %}
+            </p>
+            {% if state.notes %}
+              <p class="mt-2 text-sm text-slate-300">{{ state.notes }}</p>
+            {% endif %}
+          </div>
+          <form action="{% url 'remove_personal_title_state' title_pk=state.title.pk %}" method="post">
+            {% csrf_token %}
+            <button class="rounded border border-red-400/60 px-3 py-2 text-sm text-red-200">Remove</button>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  {% elif selected_status %}
+    <div class="rounded border border-slate-800 bg-slate-900 p-6 text-slate-400">No titles for this status yet.</div>
+  {% else %}
+    <div class="rounded border border-slate-800 bg-slate-900 p-6 text-slate-400">No personal titles yet. Add one from a title detail page.</div>
+  {% endif %}
+</div>
+{% endblock %}

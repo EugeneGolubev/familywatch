@@ -18,6 +18,11 @@
   </div>
 </section>
 
+<section class="mt-6">
+  <h2 class="text-xl font-semibold mb-3">Shared lists</h2>
+  <a href="{% url 'household_lists' household_pk=household.pk %}" class="inline-block rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Open household lists</a>
+</section>
+
 {% if is_owner %}
   <p class="mt-6 text-sm text-slate-400">Owner actions will be added in a later phase.</p>
 {% endif %}

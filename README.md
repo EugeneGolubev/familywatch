@@ -6,7 +6,7 @@ Personal and household movie/TV tracking service built with Django, HTMX, Postgr
 
 Phase 1 scaffold is complete and has passed the quality check. Phase 2 accounts
 and household onboarding is complete. Phase 3 catalog search and title details
-are complete.
+are complete. Phase 4 personal watch states and household lists are complete.
 
 Verified in Docker Compose:
 
@@ -64,6 +64,23 @@ This repository now includes:
 - Tests for TMDb normalization, catalog services, missing API key behavior,
   authenticated/unauthenticated access, detail sync, and duplicate prevention
 
+## Phase 4 scope
+
+This repository now includes:
+
+- Personal title states for authenticated users: planned, watching, watched,
+  dropped, favorite, and not interested
+- Personal rating, notes, and watched date/time metadata
+- Add/update personal state from local title detail pages
+- "My List" page with status filtering and remove actions
+- Household shared lists restricted to household members
+- Household list creation, detail pages, local title add actions, and remove
+  actions
+- Duplicate-safe service behavior for personal states, household list names, and
+  household list items
+- Tests for personal services/forms/views, catalog integration, household list
+  permissions, duplicate handling, and removal behavior
+
 ## Requirements
 
 - Docker Desktop on Windows, or Docker Engine + Docker Compose on Linux
@@ -111,11 +128,16 @@ http://localhost:8000/login/
 http://localhost:8000/households/
 http://localhost:8000/households/create/
 http://localhost:8000/catalog/search/
+http://localhost:8000/lists/mine/
 ```
 
 Catalog search requires login. Set `TMDB_API_KEY` in `.env` to enable live TMDb
 search and detail sync. Without the key, the app stays usable and shows a
 configuration message on catalog pages.
+
+Personal list actions are available from local title detail pages. Household
+lists are available from each household detail page and require household
+membership.
 
 ## Run migrations
 
@@ -209,16 +231,33 @@ Completed:
 - Missing TMDb API key handling in services and UI
 - Service and view tests for Phase 3 behavior
 
+### Phase 4: Personal watch states and household lists
+
+Status: complete.
+
+Completed:
+
+- Add and update personal title state from title detail pages
+- Personal "My List" page with status filtering and remove actions
+- Rating validation for personal title states
+- Household shared list overview and detail pages
+- Household list creation by members
+- Add and remove existing local titles from household lists
+- Household membership checks for all shared-list pages and actions
+- Duplicate-safe services for existing personal states, list names, and list
+  items
+
 ### Later phases
 
 Planned direction:
 
-- Personal watch states and household lists
 - Streaming availability and recommendations
 - Background sync tasks and scheduled refreshes
 
-Phase 3 implementation instructions remain available for reference in:
+Phase implementation instructions remain available for reference in:
 
 ```text
 docs/phase-3-instructions.md
+docs/phase-4-instructions.md
+docs/phase-5-instructions.md
 ```
