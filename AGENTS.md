@@ -5,8 +5,9 @@ FamilyWatch: personal and household movie/TV tracking service.
 
 ## Current status
 - Phase 1 scaffold and quality pass are complete.
-- Phase 2 has not started yet.
-- Keep the current branch focused on Phase 1 fixes and documentation only.
+- Phase 2 accounts and household onboarding is complete.
+- Phase 3 is planned in docs/phase-3-instructions.md.
+- Keep future changes focused on the active phase.
 
 ## Stack
 - Django

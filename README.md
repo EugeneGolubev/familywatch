@@ -4,8 +4,9 @@ Personal and household movie/TV tracking service built with Django, HTMX, Postgr
 
 ## Current status
 
-Phase 1 scaffold is complete and has passed the quality check. Phase 2 has not
-started yet.
+Phase 1 scaffold is complete and has passed the quality check. Phase 2 accounts
+and household onboarding is complete. Phase 3 is planned and documented in
+`docs/phase-3-instructions.md`.
 
 Verified in Docker Compose:
 
@@ -30,6 +31,22 @@ This repository currently includes:
 - Minimal templates and routes
 - Django admin registration
 - Initial pytest tests
+
+## Phase 2 scope
+
+This repository now includes:
+
+- User registration with Django auth
+- Login and POST-based logout behavior with Django auth views
+- Automatic `UserProfile` creation for registered and directly created users
+- Household creation flow for logged-in users
+- Automatic owner membership creation during household setup
+- Database rules preventing duplicate memberships and more than one owner
+  membership per household
+- Household dashboard and detail pages restricted to household members
+- Explicit admin configuration for profiles, households, and memberships
+- Tests for account/profile creation, household creation, membership roles, and
+  dashboard/detail permissions
 
 ## Requirements
 
@@ -70,6 +87,15 @@ Open:
 http://localhost:8000
 ```
 
+Useful app routes:
+
+```text
+http://localhost:8000/accounts/register/
+http://localhost:8000/login/
+http://localhost:8000/households/
+http://localhost:8000/households/create/
+```
+
 ## Run migrations
 
 ```bash
@@ -104,9 +130,9 @@ docker compose down
 docker compose down -v
 ```
 
-## Phase 1 quality checks
+## Quality checks
 
-Before starting or reviewing Phase 2 work, verify the scaffold with:
+Before reviewing changes, verify the app with:
 
 ```bash
 docker compose config
@@ -130,22 +156,36 @@ Completed:
 - TMDb client skeleton inside the integrations app
 - Phase 1 setup fixes and Docker Compose verification
 
-### Phase 2: Household onboarding
+### Phase 2: Accounts and household onboarding
 
-Status: not started.
+Status: complete.
 
-Planned:
+Completed:
 
 - Create household screen
 - Auto-create owner membership
-- Add/invite second household member
-- Household dashboard with members and shared default lists
+- User registration, login, and logout behavior
+- Automatic user profiles
+- Household dashboard and detail pages
+- Membership uniqueness and single-owner constraints
+- Member-only household access checks
+
+Deferred:
+
+- Inviting additional household members
+- Shared default lists
 
 ### Later phases
 
 Planned direction:
 
-- Catalog search and title details backed by integrations
+- Phase 3: catalog search and title details backed by integrations
 - Personal watch states and household lists
 - Streaming availability and recommendations
 - Background sync tasks and scheduled refreshes
+
+Phase 3 implementation instructions are available in:
+
+```text
+docs/phase-3-instructions.md
+```
