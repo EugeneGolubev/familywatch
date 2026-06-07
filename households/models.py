@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -25,6 +26,13 @@ class HouseholdMembership(models.Model):
 
     class Meta:
         unique_together = ("household", "user")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["household"],
+                condition=Q(role="owner"),
+                name="unique_owner_membership_per_household",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.user} in {self.household} ({self.role})"
