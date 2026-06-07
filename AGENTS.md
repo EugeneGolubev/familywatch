@@ -8,6 +8,7 @@ FamilyWatch: personal and household movie/TV tracking service.
 - Phase 2 accounts and household onboarding is complete.
 - Phase 3 catalog search and title details are complete.
 - Phase 4 personal watch states and household lists are complete.
+- Phase 5 streaming availability is deferred until an API-backed provider is selected.
 - Keep future changes focused on the active phase.
 
 ## Stack
@@ -25,6 +26,7 @@ FamilyWatch: personal and household movie/TV tracking service.
 - Do not hardcode API keys.
 - Use environment variables.
 - Keep external API clients inside integrations app.
+- Do not build manual streaming availability data-entry workflows.
 - Prefer service classes over business logic in views.
 - Add tests for new models/services.
 - All commands should work through Docker Compose.

@@ -7,6 +7,8 @@ Personal and household movie/TV tracking service built with Django, HTMX, Postgr
 Phase 1 scaffold is complete and has passed the quality check. Phase 2 accounts
 and household onboarding is complete. Phase 3 catalog search and title details
 are complete. Phase 4 personal watch states and household lists are complete.
+Phase 5 streaming availability has been intentionally deferred until an
+API-backed availability provider is selected.
 
 Verified in Docker Compose:
 
@@ -85,6 +87,12 @@ This repository now includes:
 
 - Docker Desktop on Windows, or Docker Engine + Docker Compose on Linux
 - TMDb API key for later catalog search work
+
+## Documentation
+
+- [Installation guide](docs/installation.md)
+- [End user guide](docs/end-user-guide.md)
+- [Admin guide](docs/admin-guide.md)
 
 ## Setup
 
@@ -251,8 +259,29 @@ Completed:
 
 Planned direction:
 
-- Streaming availability and recommendations
+- API-backed streaming availability
+- Recommendations
 - Background sync tasks and scheduled refreshes
+
+### Phase 5: Streaming availability
+
+Status: deferred.
+
+Manual streaming availability management is intentionally not part of the MVP.
+Entering provider availability by hand would create too much admin work and would
+not scale for normal use. The existing `streaming` app remains as a placeholder
+for a future API-backed implementation.
+
+Future work should:
+
+- Select a streaming availability API/provider first
+- Keep the external client inside the `integrations` app
+- Read API keys from environment variables
+- Cache normalized provider/title availability locally only after API behavior is
+  defined
+- Add title-detail "where to watch" UI only when availability can be populated
+  automatically
+- Avoid manual admin data-entry workflows for availability
 
 Phase implementation instructions remain available for reference in:
 

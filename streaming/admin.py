@@ -1,11 +1,6 @@
-from django.contrib import admin
-from django.contrib.admin.sites import AlreadyRegistered
-from . import models
+"""Streaming admin is intentionally empty for now.
 
-for name in dir(models):
-    obj = getattr(models, name)
-    if hasattr(obj, "_meta") and getattr(obj._meta, "app_label", None) == "streaming":
-        try:
-            admin.site.register(obj)
-        except AlreadyRegistered:
-            pass
+Phase 5 defers manual streaming availability management. Future availability
+records should be populated through an API-backed integration instead of admin
+data entry.
+"""
