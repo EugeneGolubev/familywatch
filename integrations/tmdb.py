@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 from typing import Any
 
 import requests
@@ -24,7 +26,8 @@ class TMDbClient:
             raise TMDbClientError("TMDB_API_KEY is not configured")
 
         params = {**(params or {}), "api_key": self.api_key}
-        cache_key = f"tmdb:{path}:{sorted(params.items())}"
+        cache_payload = json.dumps({"path": path, "params": params}, sort_keys=True)
+        cache_key = f"tmdb:{hashlib.sha256(cache_payload.encode()).hexdigest()}"
         cached = cache.get(cache_key)
         if cached is not None:
             return cached

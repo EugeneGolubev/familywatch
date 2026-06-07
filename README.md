@@ -25,7 +25,8 @@ This repository currently includes:
 
 ## Setup
 
-Copy the environment example:
+The Compose file works with built-in development defaults, but copying the example
+is recommended before running the app:
 
 ```bash
 cp .env.example .env
@@ -37,11 +38,11 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and set at least:
+Edit `.env` and set:
 
 ```env
 DJANGO_SECRET_KEY=your-local-secret
-TMDB_API_KEY=your-tmdb-key
+TMDB_API_KEY=your-tmdb-key-for-tmdb-backed-features
 ```
 
 ## Run development server
@@ -59,7 +60,6 @@ http://localhost:8000
 ## Run migrations
 
 ```bash
-docker compose run --rm web python manage.py makemigrations
 docker compose run --rm web python manage.py migrate
 ```
 
@@ -85,9 +85,21 @@ docker compose run --rm web pytest
 
 ```bash
 docker compose run --rm web python manage.py check
+docker compose run --rm web python manage.py makemigrations --check --dry-run
 docker compose run --rm web python manage.py shell
 docker compose down
 docker compose down -v
+```
+
+## Phase 1 quality checks
+
+Before starting Phase 2, verify the scaffold with:
+
+```bash
+docker compose config
+docker compose run --rm web python manage.py check
+docker compose run --rm web python manage.py makemigrations --check --dry-run
+docker compose run --rm web pytest
 ```
 
 ## Next phase
