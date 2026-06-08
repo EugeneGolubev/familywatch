@@ -11,6 +11,68 @@ Compose.
 The app can start without a TMDb API key, but catalog search will show a
 configuration message until `TMDB_API_KEY` is set.
 
+## Environment Values
+
+### Django secret key
+
+`DJANGO_SECRET_KEY` is used by Django to sign security-sensitive data such as
+sessions and password reset tokens. For local development, any long random value
+is enough.
+
+For shared, staging, or production environments:
+
+- Generate a unique secret key per environment.
+- Keep it outside Git in `.env`, a deployment secret store, or your hosting
+  platform's environment variable settings.
+- Do not reuse the example value from `.env.example`.
+- Do not share the same key between local development and production.
+- If the key is exposed, replace it immediately and restart the app.
+
+Changing `DJANGO_SECRET_KEY` later can invalidate existing sessions and signed
+tokens, so plan rotations carefully. Users may need to log in again after a
+rotation.
+
+You can generate a local development key with Django:
+
+```bash
+docker compose run --rm web python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Paste the generated value into `.env`:
+
+```env
+DJANGO_SECRET_KEY=generated-secret-key
+```
+
+### TMDb API key
+
+`TMDB_API_KEY` enables catalog search and title detail sync.
+
+To get a TMDb API key:
+
+1. Open [TMDb](https://www.themoviedb.org/) in a desktop browser.
+2. Create an account or log in.
+3. Open your account settings.
+4. Select **API** from the settings sidebar.
+5. Agree to the TMDb API terms.
+6. Register an API application and copy the API key.
+7. Add it to `.env`:
+
+   ```env
+   TMDB_API_KEY=your-tmdb-api-key
+   ```
+
+8. Restart Docker Compose so the app reads the updated environment:
+
+   ```bash
+   docker compose down
+   docker compose up --build
+   ```
+
+TMDb's developer documentation says API key registration is available from the
+API link in account settings and is best completed from a desktop browser:
+[TMDb Getting Started](https://developer.themoviedb.org/v4/docs/getting-started).
+
 ## Windows
 
 1. Start Docker Desktop.
@@ -158,4 +220,3 @@ Stop containers and remove the local database volume:
 ```bash
 docker compose down -v
 ```
-
