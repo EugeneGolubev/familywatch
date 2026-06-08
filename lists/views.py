@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import redirect, render
 
-from catalog.models import Title
-from lists.forms import HouseholdListAddTitleForm, HouseholdListCreateForm, PersonalTitleStateForm
+from catalog.services import CatalogService
+from lists.forms import HouseholdListCreateForm, PersonalTitleStateForm, TMDbTitleAddForm
 from lists.models import HouseholdList, UserTitleState
 from lists.services import HouseholdListService, PersonalTitleStateService, get_title_or_404
 
@@ -67,6 +68,7 @@ def household_lists(request, household_pk: int):
             "household": household,
             "household_lists": lists,
             "form": HouseholdListCreateForm(),
+            "can_manage_categories": household.owner_id == request.user.id,
         },
     )
 
@@ -78,15 +80,18 @@ def create_household_list(request, household_pk: int):
 
     form = HouseholdListCreateForm(request.POST)
     if form.is_valid():
-        household_list, created = HouseholdListService.create_list(
-            user=request.user,
-            household_pk=household_pk,
-            name=form.cleaned_data["name"],
-        )
+        try:
+            household_list, created = HouseholdListService.create_category(
+                user=request.user,
+                household_pk=household_pk,
+                name=form.cleaned_data["name"],
+            )
+        except PermissionDenied as exc:
+            raise Http404 from exc
         if created:
-            messages.success(request, "Household list created.")
+            messages.success(request, "Household category created.")
         else:
-            messages.info(request, "That household list already exists.")
+            messages.info(request, "That household category already exists.")
         return redirect("household_list_detail", household_pk=household_pk, list_pk=household_list.pk)
 
     household, lists = HouseholdListService.lists_for_household(user=request.user, household_pk=household_pk)
@@ -97,9 +102,21 @@ def create_household_list(request, household_pk: int):
             "household": household,
             "household_lists": lists,
             "form": form,
+            "can_manage_categories": household.owner_id == request.user.id,
         },
         status=400,
     )
+
+
+@login_required
+def remove_household_category(request, household_pk: int, list_pk: int):
+    if request.method == "POST":
+        try:
+            HouseholdListService.remove_category(user=request.user, household_pk=household_pk, list_pk=list_pk)
+        except PermissionDenied as exc:
+            raise Http404 from exc
+        messages.success(request, "Household category removed.")
+    return redirect("household_lists", household_pk=household_pk)
 
 
 @login_required
@@ -121,35 +138,73 @@ def household_list_detail(request, household_pk: int, list_pk: int):
             "household": household_list.household,
             "household_list": household_list,
             "items": items,
-            "add_form": HouseholdListAddTitleForm(),
         },
     )
 
 
 @login_required
 def add_household_list_title(request, household_pk: int, list_pk: int):
-    if request.method != "POST":
-        return redirect("household_list_detail", household_pk=household_pk, list_pk=list_pk)
+    return redirect("household_category_add_title", household_pk=household_pk, list_pk=list_pk)
 
-    form = HouseholdListAddTitleForm(request.POST)
+
+@login_required
+def household_category_add_title(request, household_pk: int, list_pk: int):
+    try:
+        household_list = HouseholdListService.get_list_for_member(
+            user=request.user,
+            household_pk=household_pk,
+            list_pk=list_pk,
+        )
+    except HouseholdList.DoesNotExist as exc:
+        raise Http404 from exc
+
+    response = CatalogService().search(request.GET.get("q", ""))
+    return render(
+        request,
+        "lists/household_add_title.html",
+        {
+            "household": household_list.household,
+            "household_list": household_list,
+            "query": response.query,
+            "results": response.results,
+            "error_message": response.error_message,
+        },
+    )
+
+
+@login_required
+def add_tmdb_to_household_category(request, household_pk: int, list_pk: int):
+    if request.method != "POST":
+        return redirect("household_category_add_title", household_pk=household_pk, list_pk=list_pk)
+
+    try:
+        household_list = HouseholdListService.get_list_for_member(
+            user=request.user,
+            household_pk=household_pk,
+            list_pk=list_pk,
+        )
+    except HouseholdList.DoesNotExist as exc:
+        raise Http404 from exc
+
+    form = TMDbTitleAddForm(request.POST)
     if form.is_valid():
-        title = Title.objects.get(pk=form.cleaned_data["title_pk"])
-        try:
-            _, created = HouseholdListService.add_title(
-                user=request.user,
-                household_pk=household_pk,
-                list_pk=list_pk,
-                title=title,
-            )
-        except HouseholdList.DoesNotExist as exc:
-            raise Http404 from exc
+        title = CatalogService().get_or_sync_title(
+            media_type=form.cleaned_data["media_type"],
+            tmdb_id=form.cleaned_data["tmdb_id"],
+        )
+        _, created = HouseholdListService.add_title(
+            user=request.user,
+            household_pk=household_pk,
+            list_pk=list_pk,
+            title=title,
+        )
         if created:
-            messages.success(request, "Title added to the household list.")
+            messages.success(request, "Title added to the household category.")
         else:
-            messages.info(request, "That title is already on this household list.")
+            messages.info(request, "That title is already in this household category.")
     else:
-        messages.error(request, "Choose an existing local title.")
-    return redirect("household_list_detail", household_pk=household_pk, list_pk=list_pk)
+        messages.error(request, "Choose a valid catalog result.")
+    return redirect("household_list_detail", household_pk=household_pk, list_pk=household_list.pk)
 
 
 @login_required

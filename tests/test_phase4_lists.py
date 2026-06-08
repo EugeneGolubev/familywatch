@@ -1,11 +1,14 @@
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils import timezone
 
 from catalog.models import Title
+from integrations.tmdb import NormalizedTMDbTitle
 from households.models import HouseholdMembership
 from households.services import HouseholdService
 from lists.forms import PersonalTitleStateForm
@@ -153,6 +156,56 @@ def test_title_detail_exposes_personal_state_context(client) -> None:
 
 
 @pytest.mark.django_db
+def test_title_detail_exposes_household_category_choices(client) -> None:
+    user = User.objects.create_user(username="viewer", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+    title = create_title()
+    client.force_login(user)
+
+    response = client.get(reverse("title_detail", kwargs={"pk": title.pk}))
+
+    assert response.status_code == 200
+    assert "household_category_form" in response.context
+    assert list(response.context["household_category_form"].fields["household_list"].queryset) == list(
+        household.lists.order_by("household__name", "name", "id")
+    )
+    assert b"Add to household category" in response.content
+
+
+@pytest.mark.django_db
+def test_title_detail_post_adds_title_to_household_category(client) -> None:
+    user = User.objects.create_user(username="viewer", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+    category = household.lists.get(name="Plan to watch together")
+    title = create_title()
+    client.force_login(user)
+
+    response = client.post(
+        reverse("add_title_to_household_category", kwargs={"title_pk": title.pk}),
+        {"household_list": str(category.pk)},
+    )
+
+    assert response.status_code == 302
+    assert HouseholdListItem.objects.filter(household_list=category, title=title, added_by=user).exists()
+
+
+@pytest.mark.django_db
+def test_title_detail_post_does_not_create_personal_state(client) -> None:
+    user = User.objects.create_user(username="viewer", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+    category = household.lists.get(name="Plan to watch together")
+    title = create_title()
+    client.force_login(user)
+
+    client.post(
+        reverse("add_title_to_household_category", kwargs={"title_pk": title.pk}),
+        {"household_list": str(category.pk)},
+    )
+
+    assert not UserTitleState.objects.filter(user=user, title=title).exists()
+
+
+@pytest.mark.django_db
 def test_personal_state_post_adds_title_from_detail(client) -> None:
     user = User.objects.create_user(username="viewer", password="StrongPass123")
     title = create_title()
@@ -190,6 +243,78 @@ def test_household_list_creation_by_member() -> None:
     assert household_list.household == household
     assert household_list.name == "Weekend"
     assert household_list.created_by == user
+
+
+@pytest.mark.django_db
+def test_household_creation_creates_default_categories() -> None:
+    user = User.objects.create_user(username="owner", password="StrongPass123")
+
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+
+    assert list(household.lists.order_by("created_at", "id").values_list("name", flat=True)) == [
+        "Plan to watch together",
+        "Watching together",
+        "Watched",
+        "Watch with Kids",
+    ]
+
+
+@pytest.mark.django_db
+def test_owner_can_create_custom_category() -> None:
+    owner = User.objects.create_user(username="owner", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=owner, name="Home")
+
+    category, created = HouseholdListService.create_category(
+        user=owner,
+        household_pk=household.pk,
+        name="Holiday break",
+    )
+
+    assert created is True
+    assert category.household == household
+    assert category.name == "Holiday break"
+    assert category.created_by == owner
+
+
+@pytest.mark.django_db
+def test_member_cannot_create_custom_category() -> None:
+    owner = User.objects.create_user(username="owner", password="StrongPass123")
+    member = User.objects.create_user(username="member", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=owner, name="Home")
+    HouseholdMembership.objects.create(household=household, user=member, role=HouseholdMembership.Role.MEMBER)
+
+    with pytest.raises(PermissionDenied):
+        HouseholdListService.create_category(user=member, household_pk=household.pk, name="Member pick")
+
+
+@pytest.mark.django_db
+def test_owner_can_remove_category() -> None:
+    owner = User.objects.create_user(username="owner", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=owner, name="Home")
+    category = household.lists.get(name="Watch with Kids")
+
+    removed = HouseholdListService.remove_category(
+        user=owner,
+        household_pk=household.pk,
+        list_pk=category.pk,
+    )
+
+    assert removed is True
+    assert not HouseholdList.objects.filter(pk=category.pk).exists()
+
+
+@pytest.mark.django_db
+def test_member_cannot_remove_category() -> None:
+    owner = User.objects.create_user(username="owner", password="StrongPass123")
+    member = User.objects.create_user(username="member", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=owner, name="Home")
+    HouseholdMembership.objects.create(household=household, user=member, role=HouseholdMembership.Role.MEMBER)
+    category = household.lists.get(name="Watch with Kids")
+
+    with pytest.raises(PermissionDenied):
+        HouseholdListService.remove_category(user=member, household_pk=household.pk, list_pk=category.pk)
+
+    assert HouseholdList.objects.filter(pk=category.pk).exists()
 
 
 @pytest.mark.django_db
@@ -326,3 +451,63 @@ def test_household_list_actions_reject_non_members() -> None:
             list_pk=household_list.pk,
             title=title,
         )
+
+
+@pytest.mark.django_db
+def test_household_category_add_title_search_returns_catalog_results(client) -> None:
+    user = User.objects.create_user(username="owner", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+    category = household.lists.get(name="Plan to watch together")
+    client.force_login(user)
+    result = NormalizedTMDbTitle(
+        tmdb_id=11,
+        media_type=Title.Type.MOVIE,
+        title="Arrival",
+        original_title="Arrival",
+        year=2016,
+        overview="A linguist works with the military.",
+        poster_path="/arrival.jpg",
+    )
+
+    with patch("lists.views.CatalogService") as catalog_service:
+        catalog_service.return_value.search.return_value.query = "arrival"
+        catalog_service.return_value.search.return_value.results = [result]
+        catalog_service.return_value.search.return_value.error_message = ""
+
+        response = client.get(
+            reverse(
+                "household_category_add_title",
+                kwargs={"household_pk": household.pk, "list_pk": category.pk},
+            ),
+            {"q": "arrival"},
+        )
+
+    assert response.status_code == 200
+    assert response.context["query"] == "arrival"
+    assert response.context["results"] == [result]
+    assert b"Arrival" in response.content
+    assert b"Add to category" in response.content
+
+
+@pytest.mark.django_db
+def test_add_tmdb_result_to_household_category_syncs_and_adds_title(client) -> None:
+    user = User.objects.create_user(username="owner", password="StrongPass123")
+    household = HouseholdService.create_household_for_user(user=user, name="Home")
+    category = household.lists.get(name="Plan to watch together")
+    client.force_login(user)
+
+    with patch("lists.views.CatalogService") as catalog_service:
+        catalog_service.return_value.get_or_sync_title.return_value = create_title(title="Arrival", tmdb_id=11)
+
+        response = client.post(
+            reverse(
+                "add_tmdb_to_household_category",
+                kwargs={"household_pk": household.pk, "list_pk": category.pk},
+            ),
+            {"media_type": Title.Type.MOVIE, "tmdb_id": "11"},
+        )
+
+    assert response.status_code == 302
+    title = Title.objects.get(type=Title.Type.MOVIE, tmdb_id=11)
+    assert HouseholdListItem.objects.filter(household_list=category, title=title, added_by=user).exists()
+    catalog_service.return_value.get_or_sync_title.assert_called_once_with(media_type=Title.Type.MOVIE, tmdb_id=11)

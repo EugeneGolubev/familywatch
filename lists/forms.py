@@ -2,6 +2,7 @@ from django import forms
 
 from catalog.models import Title
 from lists.models import HouseholdList, UserTitleState
+from lists.services import HouseholdListService
 
 
 class PersonalTitleStateForm(forms.ModelForm):
@@ -54,14 +55,23 @@ class HouseholdListCreateForm(forms.ModelForm):
         return name
 
 
-class HouseholdListAddTitleForm(forms.Form):
-    title_pk = forms.IntegerField(
-        label="Title ID",
-        widget=forms.NumberInput(attrs={"class": "w-full rounded bg-slate-900 border border-slate-700 p-2", "min": 1}),
+class HouseholdCategoryChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: HouseholdList) -> str:
+        return f"{obj.household.name} - {obj.name}"
+
+
+class HouseholdCategoryChoiceForm(forms.Form):
+    household_list = HouseholdCategoryChoiceField(
+        label="Household category",
+        queryset=HouseholdList.objects.none(),
+        widget=forms.Select(attrs={"class": "w-full rounded bg-slate-900 border border-slate-700 p-2"}),
     )
 
-    def clean_title_pk(self) -> int:
-        title_pk = self.cleaned_data["title_pk"]
-        if not Title.objects.filter(pk=title_pk).exists():
-            raise forms.ValidationError("Choose an existing local title.")
-        return title_pk
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["household_list"].queryset = HouseholdListService.categories_for_user(user=user)
+
+
+class TMDbTitleAddForm(forms.Form):
+    media_type = forms.ChoiceField(choices=Title.Type.choices, widget=forms.HiddenInput)
+    tmdb_id = forms.IntegerField(widget=forms.HiddenInput)

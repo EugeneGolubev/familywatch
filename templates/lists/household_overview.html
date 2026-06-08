@@ -3,36 +3,46 @@
 <div class="space-y-6">
   <div>
     <a href="{% url 'household_detail' pk=household.pk %}" class="text-sm text-cyan-300 hover:text-cyan-200">Back to household</a>
-    <h1 class="mt-2 text-2xl font-bold">{{ household.name }} Lists</h1>
-    <p class="text-slate-400">Shared title lists for this household.</p>
+    <h1 class="mt-2 text-2xl font-bold">{{ household.name }} Categories</h1>
+    <p class="text-slate-400">Shared title categories for this household.</p>
   </div>
 
-  <section class="rounded border border-slate-800 bg-slate-900 p-4">
-    <h2 class="mb-3 text-lg font-semibold">Create a household list</h2>
-    <form action="{% url 'create_household_list' household_pk=household.pk %}" method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
-      {% csrf_token %}
-      <label class="flex-1 text-sm">
-        <span class="mb-1 block text-slate-400">Name</span>
-        {{ form.name }}
-        {% if form.name.errors %}<span class="mt-1 block text-red-300">{{ form.name.errors.0 }}</span>{% endif %}
-      </label>
-      <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Create</button>
-    </form>
-  </section>
+  {% if can_manage_categories %}
+    <section class="rounded border border-slate-800 bg-slate-900 p-4">
+      <h2 class="mb-3 text-lg font-semibold">Create a household category</h2>
+      <form action="{% url 'create_household_list' household_pk=household.pk %}" method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+        {% csrf_token %}
+        <label class="flex-1 text-sm">
+          <span class="mb-1 block text-slate-400">Name</span>
+          {{ form.name }}
+          {% if form.name.errors %}<span class="mt-1 block text-red-300">{{ form.name.errors.0 }}</span>{% endif %}
+        </label>
+        <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Create</button>
+      </form>
+    </section>
+  {% endif %}
 
   {% if household_lists %}
     <div class="divide-y divide-slate-800 rounded border border-slate-800">
       {% for list in household_lists %}
-        <article class="p-4">
-          <h2 class="font-semibold">
-            <a href="{% url 'household_list_detail' household_pk=household.pk list_pk=list.pk %}" class="text-cyan-300 hover:text-cyan-200">{{ list.name }}</a>
-          </h2>
-          <p class="text-sm text-slate-400">{{ list.items.count }} title{{ list.items.count|pluralize }}</p>
+        <article class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-semibold">
+              <a href="{% url 'household_list_detail' household_pk=household.pk list_pk=list.pk %}" class="text-cyan-300 hover:text-cyan-200">{{ list.name }}</a>
+            </h2>
+            <p class="text-sm text-slate-400">{{ list.items.count }} title{{ list.items.count|pluralize }}</p>
+          </div>
+          {% if can_manage_categories %}
+            <form action="{% url 'remove_household_category' household_pk=household.pk list_pk=list.pk %}" method="post">
+              {% csrf_token %}
+              <button class="rounded border border-red-400/60 px-3 py-2 text-sm text-red-200">Remove</button>
+            </form>
+          {% endif %}
         </article>
       {% endfor %}
     </div>
   {% else %}
-    <div class="rounded border border-slate-800 bg-slate-900 p-6 text-slate-400">No household lists yet.</div>
+    <div class="rounded border border-slate-800 bg-slate-900 p-6 text-slate-400">No household categories yet.</div>
   {% endif %}
 </div>
 {% endblock %}

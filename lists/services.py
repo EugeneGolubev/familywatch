@@ -1,15 +1,23 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 
 from catalog.models import Title
 from households.models import Household
-from households.services import get_household_for_member
+from households.services import get_household_for_member, user_is_household_owner
 from lists.models import HouseholdList, HouseholdListItem, UserTitleState
 
 User = get_user_model()
 _UNSET = object()
+
+DEFAULT_HOUSEHOLD_CATEGORIES = (
+    "Plan to watch together",
+    "Watching together",
+    "Watched",
+    "Watch with Kids",
+)
 
 
 class PersonalTitleStateService:
@@ -57,6 +65,15 @@ class PersonalTitleStateService:
 
 class HouseholdListService:
     @staticmethod
+    def create_default_categories(*, household: Household, user: User) -> None:
+        for name in DEFAULT_HOUSEHOLD_CATEGORIES:
+            HouseholdList.objects.get_or_create(
+                household=household,
+                name=name,
+                defaults={"created_by": user},
+            )
+
+    @staticmethod
     def lists_for_household(*, user: User, household_pk: int) -> tuple[Household, QuerySet[HouseholdList]]:
         household = get_household_for_member(user=user, pk=household_pk)
         household_lists = (
@@ -68,6 +85,13 @@ class HouseholdListService:
         return household, household_lists
 
     @staticmethod
+    def _get_household_for_owner(*, user: User, household_pk: int) -> Household:
+        household = get_household_for_member(user=user, pk=household_pk)
+        if not user_is_household_owner(user, household):
+            raise PermissionDenied("Only the household owner can manage categories.")
+        return household
+
+    @staticmethod
     @transaction.atomic
     def create_list(*, user: User, household_pk: int, name: str) -> tuple[HouseholdList, bool]:
         household = get_household_for_member(user=user, pk=household_pk)
@@ -77,6 +101,32 @@ class HouseholdListService:
             defaults={"created_by": user},
         )
         return household_list, created
+
+    @staticmethod
+    @transaction.atomic
+    def create_category(*, user: User, household_pk: int, name: str) -> tuple[HouseholdList, bool]:
+        household = HouseholdListService._get_household_for_owner(user=user, household_pk=household_pk)
+        household_list, created = HouseholdList.objects.get_or_create(
+            household=household,
+            name=name.strip(),
+            defaults={"created_by": user},
+        )
+        return household_list, created
+
+    @staticmethod
+    @transaction.atomic
+    def remove_category(*, user: User, household_pk: int, list_pk: int) -> bool:
+        household = HouseholdListService._get_household_for_owner(user=user, household_pk=household_pk)
+        deleted_count, _ = HouseholdList.objects.filter(pk=list_pk, household=household).delete()
+        return deleted_count > 0
+
+    @staticmethod
+    def categories_for_user(*, user: User) -> QuerySet[HouseholdList]:
+        return (
+            HouseholdList.objects.filter(household__memberships__user=user)
+            .select_related("household")
+            .order_by("household__name", "name", "id")
+        )
 
     @staticmethod
     def get_list_for_member(*, user: User, household_pk: int, list_pk: int) -> HouseholdList:

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <a href="{% url 'household_list_detail' household_pk=household.pk list_pk=household_list.pk %}" class="text-sm text-cyan-300 hover:text-cyan-200">Back to category</a>
+    <h1 class="mt-2 text-2xl font-bold">Add title</h1>
+    <p class="text-slate-400">{{ household.name }} - {{ household_list.name }}</p>
+  </div>
+
+  <form method="get" class="flex flex-col gap-3 sm:flex-row">
+    <input name="q" value="{{ query }}" class="text-slate-900 p-2 rounded flex-1" placeholder="Movie or TV show">
+    <button class="px-4 py-2 bg-blue-600 rounded font-semibold">Search</button>
+  </form>
+
+  {% if error_message %}
+    <div class="border border-amber-500/50 bg-amber-500/10 text-amber-100 rounded p-4">
+      {{ error_message }}
+    </div>
+  {% endif %}
+
+  {% if query and not error_message and not results %}
+    <p class="text-slate-400">No catalog matches found for "{{ query }}".</p>
+  {% endif %}
+
+  {% if results %}
+    <div class="grid gap-4">
+      {% for result in results %}
+        <article class="border border-slate-800 rounded p-4 flex flex-col gap-4 bg-slate-900 sm:flex-row">
+          {% if result.poster_url %}
+            <img src="{{ result.poster_url }}" alt="{{ result.title }} poster" class="w-20 h-28 object-cover rounded">
+          {% else %}
+            <div class="w-20 h-28 rounded bg-slate-800 flex items-center justify-center text-xs text-slate-500">No poster</div>
+          {% endif %}
+          <div class="min-w-0 flex-1">
+            <h2 class="text-lg font-semibold">{{ result.title }}</h2>
+            <p class="text-sm text-slate-400">
+              {{ result.media_label }}{% if result.year %} - {{ result.year }}{% endif %}
+            </p>
+            {% if result.overview %}
+              <p class="text-slate-300 mt-2">{{ result.overview }}</p>
+            {% endif %}
+          </div>
+          <form action="{% url 'add_tmdb_to_household_category' household_pk=household.pk list_pk=household_list.pk %}" method="post" class="sm:self-center">
+            {% csrf_token %}
+            <input type="hidden" name="media_type" value="{{ result.media_type }}">
+            <input type="hidden" name="tmdb_id" value="{{ result.tmdb_id }}">
+            <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Add to category</button>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  {% elif not query and not error_message %}
+    <p class="text-slate-400">Search by title to add a movie or TV show to this category.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -8,6 +8,21 @@ urlpatterns = [
     path("households/<int:household_pk>/", views.household_lists, name="household_lists"),
     path("households/<int:household_pk>/create/", views.create_household_list, name="create_household_list"),
     path("households/<int:household_pk>/<int:list_pk>/", views.household_list_detail, name="household_list_detail"),
+    path(
+        "households/<int:household_pk>/<int:list_pk>/remove/",
+        views.remove_household_category,
+        name="remove_household_category",
+    ),
+    path(
+        "households/<int:household_pk>/<int:list_pk>/add-title/",
+        views.household_category_add_title,
+        name="household_category_add_title",
+    ),
+    path(
+        "households/<int:household_pk>/<int:list_pk>/add-title/tmdb/",
+        views.add_tmdb_to_household_category,
+        name="add_tmdb_to_household_category",
+    ),
     path("households/<int:household_pk>/<int:list_pk>/add/", views.add_household_list_title, name="add_household_list_title"),
     path(
         "households/<int:household_pk>/<int:list_pk>/items/<int:item_pk>/remove/",
