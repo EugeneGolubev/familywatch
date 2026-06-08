@@ -1,2 +1,81 @@
 {% extends "base.html" %}
-{% block content %}<h1 class="text-2xl font-bold">Title detail #{{ title_id }}</h1>{% endblock %}
+{% block content %}
+{% if error_message %}
+  <div class="border border-amber-500/50 bg-amber-500/10 text-amber-100 rounded p-4">
+    {{ error_message }}
+  </div>
+{% elif title %}
+  <article class="space-y-6">
+    <div class="flex flex-col gap-5 sm:flex-row">
+      {% if title.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w342{{ title.poster_path }}" alt="{{ title.title }} poster" class="w-44 rounded object-cover">
+      {% else %}
+        <div class="w-44 h-64 rounded bg-slate-800 flex items-center justify-center text-slate-500">No poster</div>
+      {% endif %}
+
+      <div class="space-y-3">
+        <div>
+          <h1 class="text-3xl font-bold">{{ title.title }}</h1>
+          <p class="text-slate-400">
+            {{ title.get_type_display }}
+            {% if title.release_date %} · {{ title.release_date|date:"Y" }}{% endif %}
+            {% if title.first_air_date %} · {{ title.first_air_date|date:"Y" }}{% endif %}
+          </p>
+        </div>
+
+        {% if title.overview %}
+          <p class="text-slate-300">{{ title.overview }}</p>
+        {% endif %}
+
+        <dl class="grid gap-3 sm:grid-cols-2">
+          {% if title.source_status %}
+            <div>
+              <dt class="text-sm text-slate-500">Status</dt>
+              <dd>{{ title.source_status }}</dd>
+            </div>
+          {% endif %}
+          {% if title.runtime %}
+            <div>
+              <dt class="text-sm text-slate-500">Runtime</dt>
+              <dd>{{ title.runtime }} minutes</dd>
+            </div>
+          {% endif %}
+          <div>
+            <dt class="text-sm text-slate-500">TMDb ID</dt>
+            <dd>{{ title.tmdb_id }}</dd>
+          </div>
+        </dl>
+
+        <section class="rounded border border-slate-800 bg-slate-900 p-4">
+          <h2 class="mb-3 text-lg font-semibold">Update personal state</h2>
+          <form action="{% url 'personal_title_state' title_pk=title.pk %}" method="post" class="grid gap-3 sm:grid-cols-2">
+            {% csrf_token %}
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Status</span>
+              {{ personal_form.status }}
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Rating</span>
+              {{ personal_form.rating }}
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-400">Watched at</span>
+              {{ personal_form.watched_at }}
+            </label>
+            <label class="block text-sm sm:col-span-2">
+              <span class="mb-1 block text-slate-400">Notes</span>
+              {{ personal_form.notes }}
+            </label>
+            <div class="flex gap-3 sm:col-span-2">
+              <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Save</button>
+              {% if personal_state %}
+                <span class="self-center text-sm text-slate-400">Currently {{ personal_state.get_status_display }}</span>
+              {% endif %}
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </article>
+{% endif %}
+{% endblock %}

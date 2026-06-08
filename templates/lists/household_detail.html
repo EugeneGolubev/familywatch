@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+  <div>
+    <a href="{% url 'household_lists' household_pk=household.pk %}" class="text-sm text-cyan-300 hover:text-cyan-200">Back to lists</a>
+    <h1 class="mt-2 text-2xl font-bold">{{ household_list.name }}</h1>
+    <p class="text-slate-400">{{ household.name }}</p>
+  </div>
+
+  <section class="rounded border border-slate-800 bg-slate-900 p-4">
+    <h2 class="mb-3 text-lg font-semibold">Add a local title</h2>
+    <form action="{% url 'add_household_list_title' household_pk=household.pk list_pk=household_list.pk %}" method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+      {% csrf_token %}
+      <label class="flex-1 text-sm">
+        <span class="mb-1 block text-slate-400">Local title ID</span>
+        {{ add_form.title_pk }}
+      </label>
+      <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Add</button>
+    </form>
+  </section>
+
+  {% if items %}
+    <div class="divide-y divide-slate-800 rounded border border-slate-800">
+      {% for item in items %}
+        <article class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-semibold">
+              <a href="{% url 'title_detail' pk=item.title.pk %}" class="text-cyan-300 hover:text-cyan-200">{{ item.title.title }}</a>
+            </h2>
+            <p class="text-sm text-slate-400">
+              Added {{ item.added_at|date:"M j, Y" }}
+              {% if item.added_by %} by {{ item.added_by.username }}{% endif %}
+            </p>
+          </div>
+          <form action="{% url 'remove_household_list_item' household_pk=household.pk list_pk=household_list.pk item_pk=item.pk %}" method="post">
+            {% csrf_token %}
+            <button class="rounded border border-red-400/60 px-3 py-2 text-sm text-red-200">Remove</button>
+          </form>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="rounded border border-slate-800 bg-slate-900 p-6 text-slate-400">No titles in this household list yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

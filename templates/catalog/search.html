@@ -1,6 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Search TMDb</h1>
-<form method="get" class="flex gap-2 mb-6"><input name="q" value="{{ query }}" class="text-slate-900 p-2 rounded flex-1" placeholder="Movie or TV show"><button class="px-4 py-2 bg-blue-600 rounded">Search</button></form>
-<p class="text-slate-400">TMDb search client is ready; live search wiring comes in Phase 3.</p>
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold">Catalog search</h1>
+    <p class="text-slate-400 mt-1">Find movies and TV shows from TMDb.</p>
+  </header>
+
+  <form method="get" class="flex flex-col gap-3 sm:flex-row">
+    <input name="q" value="{{ query }}" class="text-slate-900 p-2 rounded flex-1" placeholder="Movie or TV show">
+    <button class="px-4 py-2 bg-blue-600 rounded font-semibold">Search</button>
+  </form>
+
+  {% if error_message %}
+    <div class="border border-amber-500/50 bg-amber-500/10 text-amber-100 rounded p-4">
+      {{ error_message }}
+    </div>
+  {% endif %}
+
+  {% if query and not error_message and not results %}
+    <p class="text-slate-400">No catalog matches found for "{{ query }}".</p>
+  {% endif %}
+
+  {% if results %}
+    <div class="grid gap-4">
+      {% for result in results %}
+        <article class="border border-slate-800 rounded p-4 flex gap-4 bg-slate-900">
+          {% if result.poster_url %}
+            <img src="{{ result.poster_url }}" alt="{{ result.title }} poster" class="w-20 h-28 object-cover rounded">
+          {% else %}
+            <div class="w-20 h-28 rounded bg-slate-800 flex items-center justify-center text-xs text-slate-500">No poster</div>
+          {% endif %}
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold">
+              <a class="hover:underline" href="{% url 'title_detail' result.tmdb_id %}?type={{ result.media_type }}">{{ result.title }}</a>
+            </h2>
+            <p class="text-sm text-slate-400">
+              {{ result.media_label }}{% if result.year %} · {{ result.year }}{% endif %}
+            </p>
+            {% if result.overview %}
+              <p class="text-slate-300 mt-2">{{ result.overview }}</p>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% elif not query and not error_message %}
+    <p class="text-slate-400">Search by title to start exploring the catalog.</p>
+  {% endif %}
+</div>
 {% endblock %}
