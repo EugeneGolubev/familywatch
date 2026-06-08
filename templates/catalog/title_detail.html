@@ -74,6 +74,20 @@
             </div>
           </form>
         </section>
+
+        {% if household_category_form and household_category_form.fields.household_list.queryset %}
+          <section class="rounded border border-slate-800 bg-slate-900 p-4">
+            <h2 class="mb-3 text-lg font-semibold">Add to household category</h2>
+            <form action="{% url 'add_title_to_household_category' title_pk=title.pk %}" method="post" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+              {% csrf_token %}
+              <label class="flex-1 text-sm">
+                <span class="mb-1 block text-slate-400">Category</span>
+                {{ household_category_form.household_list }}
+              </label>
+              <button class="rounded bg-cyan-500 px-4 py-2 font-semibold text-slate-950">Add</button>
+            </form>
+          </section>
+        {% endif %}
       </div>
     </div>
   </article>

@@ -143,8 +143,19 @@ TMDB_API_KEY=your-tmdb-api-key
 DEFAULT_COUNTRY=PL
 ```
 
+Keep `DJANGO_SECRET_KEY` private. Use a unique value for each environment and
+store production values in deployment secrets or environment variables, not in
+Git. If the key is rotated later, existing sessions and signed tokens may stop
+working, so users may need to log in again.
+
 If catalog search does not work, verify `TMDB_API_KEY`, restart Docker Compose,
 and try again.
+
+To obtain a TMDb key, create or log in to a TMDb account, open account settings,
+choose **API**, accept the API terms, register an application, and copy the key
+into `.env`. TMDb documents this flow in its
+[Getting Started guide](https://developer.themoviedb.org/v4/docs/getting-started)
+and [FAQ](https://developer.themoviedb.org/docs/faq).
 
 ## Verification Commands
 
@@ -171,4 +182,3 @@ Run tests:
 ```bash
 docker compose run --rm web pytest
 ```
-

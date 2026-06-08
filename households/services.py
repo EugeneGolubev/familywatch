@@ -22,6 +22,9 @@ class HouseholdService:
             user=user,
             role=HouseholdMembership.Role.OWNER,
         )
+        from lists.services import HouseholdListService
+
+        HouseholdListService.create_default_categories(household=household, user=user)
         return household
 
 
